@@ -21,10 +21,10 @@ public class ClienteServico {
     private Socket socket;
     private ObjectOutputStream output;
     
-    //Método para conectar-se ao servidor
+    //Metodo para conectar-se ao servidor
     public Socket conect(){
         try {
-            this.socket = new Socket("localhost",5557); //IP e porta utilizada para conexão
+            this.socket = new Socket("localhost",5557); //IP e porta utilizada para conexao
             this.output = new ObjectOutputStream(socket.getOutputStream());
         } catch (IOException ex) {
             Logger.getLogger(ClienteServico.class.getName()).log(Level.SEVERE, null, ex);
@@ -33,7 +33,7 @@ public class ClienteServico {
         return socket;
     }
     
-    //Método para enviar mensagem ao servidor.
+    //Metodo para enviar mensagem ao servidor.
     public void send(Mensagem message){
         try {
             output.writeObject(message);

@@ -33,9 +33,9 @@ public class ChatPainel extends javax.swing.JFrame {
     String apelido = "";
 
     MulticastSocket clientSocket;
-    InetAddress IPAddress; //Armazena endereço do grupo multicast
-    int porta = 5555; //Porta de conexão do grupo multicast
-    boolean conectou = false; //Registra se o usuário está logado ou não
+    InetAddress IPAddress; //Armazena endereco do grupo multicast
+    int porta = 5555; //Porta de conexao do grupo multicast
+    boolean conectou = false; //Registra se o usuario esta logado ou nao
 
     private void conectou() {
         rbTCP.setEnabled(false);
@@ -51,29 +51,29 @@ public class ChatPainel extends javax.swing.JFrame {
 
     Thread receberTCPThread; //Thread para receber mensagens via TCP
 
-    private void conectarUDP() { //Método para conexão via UDP
-        System.out.println("Iniciando Conexão com o grupo...");
+    private void conectarUDP() { //Metodo para conexao via UDP
+        System.out.println("Iniciando Conexao com o grupo...");
         try {
             IPAddress = InetAddress.getByName("239.255.255.255");
             clientSocket = new MulticastSocket(porta);
             conectou = true;
-            System.out.println("Conexão estabelecida");
+            System.out.println("Conexao estabelecida");
 
             conectou();
 
             EnviarMensagemUDP(jtApelido.getText() + " entrou na sala");
-            jtMensagemGrupo.append("Você entrou na sala" + "\n");
+            jtMensagemGrupo.append("Voce entrou na sala" + "\n");
 
             /*Se o cliente conectar ao grupo, inicia-se uma thread para 
               Receber as mensagens*/
             receberTCPThread = new Thread(new UDPThread());
             receberTCPThread.start();
         } catch (Exception e) {
-            System.out.println("Exceção: " + e.getMessage());
+            System.out.println("Excecao: " + e.getMessage());
         }
     }
 
-    //Método que recebe uma mensagem por parâmetro e a envia ao grupo multicast
+    //Metodo que recebe uma mensagem por parametro e a envia ao grupo multicast
     void EnviarMensagemUDP(String mensagem) {
 
         byte[] sendData = new byte[1024];
@@ -363,10 +363,10 @@ public class ChatPainel extends javax.swing.JFrame {
 
     }
 
-    //Método para quando o usuário se conectar via TCP
+    //Metodo para quando o usuario se conectar via TCP
     private void connected(Mensagem message) {
         if (message.getText().equalsIgnoreCase("NO")) {
-            JOptionPane.showMessageDialog(this, "Conexão não realizada, nome já está sendo utilizado\n");
+            JOptionPane.showMessageDialog(this, "Conexao nao realizada, nome ja esta sendo utilizado\n");
             return;
         } else {
             conectou();
@@ -396,12 +396,12 @@ public class ChatPainel extends javax.swing.JFrame {
         }
     }
 
-    //Controle do evento precionar do botão conectar
+    //Controle do evento precionar do botao conectar
     private void btConectarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btConectarActionPerformed
         // TODO add your handling code here:
         apelido = jtApelido.getText();
 
-        if (apelido.isEmpty()) { //Apelido não informado
+        if (apelido.isEmpty()) { //Apelido nao informado
             JOptionPane.showMessageDialog(rootPane, "Entre com um apelido!");
             return;
         }
@@ -410,7 +410,7 @@ public class ChatPainel extends javax.swing.JFrame {
 
         if (rbTCP.isSelected()) {
             conectarTCP();
-            jtMensagemGrupo.append("Você entrou na sala" + "\n");
+            jtMensagemGrupo.append("Voce entrou na sala" + "\n");
         } else {
             conectarUDP();
 
@@ -440,7 +440,7 @@ public class ChatPainel extends javax.swing.JFrame {
     boolean ignorar = false;
     private void btEnviarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btEnviarActionPerformed
         // TODO add your handling code here:
-        jtMensagemGrupo.append("Você disse: " + jtmsgEnviar.getText() + "\n");
+        jtMensagemGrupo.append("Voce disse: " + jtmsgEnviar.getText() + "\n");
         ignorar = true;
 
         if (rbUDP.isSelected()) {
@@ -452,7 +452,7 @@ public class ChatPainel extends javax.swing.JFrame {
 
     }//GEN-LAST:event_btEnviarActionPerformed
 
-    //Método para enviar mensagem via TCP
+    //Metodo para enviar mensagem via TCP
     public void enviarMensagemTCP() {
         String text = jtmsgEnviar.getText();
         String name = mensagem.getName();
@@ -473,7 +473,7 @@ public class ChatPainel extends javax.swing.JFrame {
         // TODO add your handling code here:
         ignorar = true;
         String mensagem = apelido + " saiu da sala";
-        jtMensagemGrupo.append("Você saiu da sala\n");
+        jtMensagemGrupo.append("Voce saiu da sala\n");
 
         if (rbUDP.isSelected()) {
             EnviarMensagemUDP(mensagem);
