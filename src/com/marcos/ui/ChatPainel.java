@@ -5,7 +5,9 @@ import com.marcos.entidade.Mensagem;
 import com.marcos.entidade.Mensagem.Action;
 import java.io.IOException;
 import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.net.DatagramPacket;
+import java.net.DatagramSocket;
 import java.net.InetAddress;
 import java.net.MulticastSocket;
 import java.net.Socket;
@@ -32,8 +34,8 @@ public class ChatPainel extends javax.swing.JFrame {
 
     String apelido = "";
 
-    MulticastSocket clientSocket;
-    InetAddress IPAddress; //Armazena endereco do grupo multicast
+    DatagramSocket clientSocket;
+    InetAddress IPAddress; //Armazena endereco do Servidor
     int porta = 5555; //Porta de conexao do grupo multicast
     boolean conectou = false; //Registra se o usuario esta logado ou nao
 
@@ -49,27 +51,62 @@ public class ChatPainel extends javax.swing.JFrame {
         btDesconectar.setEnabled(true);
     }
 
-    Thread receberTCPThread; //Thread para receber mensagens via TCP
+    Thread receberUDPThread; //Thread para receber mensagens via TCP
 
     private void conectarUDP() { //Metodo para conexao via UDP
+
         System.out.println("Iniciando Conexao com o grupo...");
         try {
-            IPAddress = InetAddress.getByName("239.255.255.255");
-            clientSocket = new MulticastSocket(porta);
-            conectou = true;
-            System.out.println("Conexao estabelecida");
 
-            conectou();
+            //IPAddress = InetAddress.getByName("239.255.255.255");
+            IPAddress = InetAddress.getByName("127.0.0.1");
+            clientSocket = new DatagramSocket();
 
-            EnviarMensagemUDP(jtApelido.getText() + " entrou na sala");
-            jtMensagemGrupo.append("Voce entrou na sala" + "\n");
+            byte[] sendData = new byte[1024];
+            String sentence;
 
-            /*Se o cliente conectar ao grupo, inicia-se uma thread para 
-              Receber as mensagens*/
-            receberTCPThread = new Thread(new UDPThread());
-            receberTCPThread.start();
-        } catch (Exception e) {
+            sentence = "status";
+            sendData = sentence.getBytes();
+
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 5556);
+            receberUDPThread = new Thread(new UDPThread());
+            receberUDPThread.start();
+
+            new Thread(new ThreadTimesTamp()).start();
+
+            try {
+                clientSocket.send(sendPacket);
+                System.out.println("Mensagem Enviada");
+
+            } catch (IOException ex) {
+                Logger.getLogger(ChatPainel.class
+                        .getName()).log(Level.SEVERE, null, ex);
+            }
+
+        } catch (IOException ex) {
+            Logger.getLogger(ChatPainel.class.getName()).log(Level.SEVERE, null, ex);
+            JOptionPane.showMessageDialog(null, "Servidor inacessível");
+        }/*catch (Exception e) {
             System.out.println("Excecao: " + e.getMessage());
+            JOptionPane.showMessageDialog(null, "Servidor inacessível");
+        }*/
+
+    }
+
+    //Thread Para Receber Mensagens UDPs
+    public class ThreadTimesTamp implements Runnable {
+
+        public void run() {
+            try {
+                Thread.currentThread().sleep(5000); // 5 segundos
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ChatPainel.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            if (conectou == false) {
+                JOptionPane.showMessageDialog(null, "Servidor Inacessível!");
+                receberUDPThread.stop();
+            }
+
         }
     }
 
@@ -82,25 +119,30 @@ public class ChatPainel extends javax.swing.JFrame {
         sentence = mensagem;
         sendData = sentence.getBytes();
 
-        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 5555);
+        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 5556);
 
         try {
             clientSocket.send(sendPacket);
             System.out.println("Mensagem Enviada");
+
         } catch (IOException ex) {
-            Logger.getLogger(ChatPainel.class.getName()).log(Level.SEVERE, null, ex);
+            Logger.getLogger(ChatPainel.class
+                    .getName()).log(Level.SEVERE, null, ex);
         }
 
         jtmsgEnviar.setText("");
+
     }
 
     //Thread Para Receber Mensagens UDPs
     public class UDPThread implements Runnable {
 
-        @Override
+        MulticastSocket serverSocket = null;
+
         public void run() {
-            MulticastSocket serverSocket = null;
+
             try {
+                IPAddress = InetAddress.getByName("239.255.255.255");
                 serverSocket = new MulticastSocket(5555);
                 serverSocket.joinGroup(IPAddress);
             } catch (SocketException ex) {
@@ -109,8 +151,10 @@ public class ChatPainel extends javax.swing.JFrame {
                 Logger.getLogger(ChatPainel.class.getName()).log(Level.SEVERE, null, ex);
             }
 
+            EnviarMensagemUDP(jtApelido.getText() + " entrou na sala");
             while (true) {
-                System.out.println("*** aguardando Mensagem");
+
+                System.out.println("Aguardando nova Mensagem");
                 byte[] receiveData = new byte[1024];
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                 try {
@@ -118,13 +162,33 @@ public class ChatPainel extends javax.swing.JFrame {
                 } catch (IOException ex) {
                     Logger.getLogger(UDPThread.class.getName()).log(Level.SEVERE, null, ex);
                 }
-                System.out.println("*** Mensagem recebida de: " + receivePacket.getAddress());
+                //serverSocket.close();
+
+                System.out.println("Mensagem recebida de: " + receivePacket.getAddress());
 
                 String sentence = new String(receivePacket.getData());
-                if (ignorar) { //Se a mensagem foi enviada por mim mesmo, ignorar
-                    ignorar = false;
+
+                sentence = sentence.trim();
+                if (sentence.equals("ok") && !conectou) {
+                    conectou = true;
+                    System.out.println("Conexao estabelecida");
+
+                    conectou();
+
+                    EnviarMensagemUDP(jtApelido.getText() + " entrou na sala");
+                    jtMensagemGrupo.append("Voce entrou na sala" + "\n");
+
+                    /*Se o cliente conectar ao grupo, inicia-se uma thread para 
+              Receber as mensagens*/
                 } else {
-                    jtMensagemGrupo.append(sentence + "\n");
+
+                    if (ignorar) { //Se a mensagem foi enviada por mim mesmo, ignorar
+                        ignorar = false;
+                    } else {
+                        if (conectou && !sentence.equals("ok")) {
+                            jtMensagemGrupo.append(sentence + "\n");
+                        }
+                    }
                 }
             }
         }
@@ -363,7 +427,7 @@ public class ChatPainel extends javax.swing.JFrame {
 
     }
 
-    //Metodo para quando o usuario se conectar via TCP
+//Metodo para quando o usuario se conectar via TCP
     private void connected(Mensagem message) {
         if (message.getText().equalsIgnoreCase("NO")) {
             JOptionPane.showMessageDialog(this, "Conexao nao realizada, nome ja esta sendo utilizado\n");
@@ -478,7 +542,7 @@ public class ChatPainel extends javax.swing.JFrame {
         if (rbUDP.isSelected()) {
             EnviarMensagemUDP(mensagem);
             clientSocket.close();
-            receberTCPThread.stop();
+            receberUDPThread.stop();
 
         } else {
             desconectarTCP();
