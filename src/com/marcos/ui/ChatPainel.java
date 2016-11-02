@@ -28,7 +28,6 @@ public class ChatPainel extends javax.swing.JFrame {
         rbUDP.setSelected(true);
         btDesconectar.setEnabled(false);
         btEnviar.setEnabled(false);
-        tfServer.setEnabled(false);
 
     }
 
@@ -52,6 +51,7 @@ public class ChatPainel extends javax.swing.JFrame {
     }
 
     Thread receberUDPThread; //Thread para receber mensagens via TCP
+    Thread threadTimesTamp;
 
     private void conectarUDP() { //Metodo para conexao via UDP
 
@@ -72,7 +72,8 @@ public class ChatPainel extends javax.swing.JFrame {
             receberUDPThread = new Thread(new UDPThread());
             receberUDPThread.start();
 
-            new Thread(new ThreadTimesTamp()).start();
+            threadTimesTamp = new Thread(new ThreadTimesTamp());
+            threadTimesTamp.start();
 
             try {
                 clientSocket.send(sendPacket);
@@ -119,9 +120,10 @@ public class ChatPainel extends javax.swing.JFrame {
         sentence = mensagem;
         sendData = sentence.getBytes();
 
-        DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 5556);
-
         try {
+            IPAddress = InetAddress.getByName("127.0.0.1");
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, IPAddress, 5556);
+
             clientSocket.send(sendPacket);
             System.out.println("Mensagem Enviada");
 
@@ -170,12 +172,14 @@ public class ChatPainel extends javax.swing.JFrame {
 
                 sentence = sentence.trim();
                 if (sentence.equals("ok") && !conectou) {
+                    threadTimesTamp.stop();
                     conectou = true;
+                    ignorar = true;
                     System.out.println("Conexao estabelecida");
 
                     conectou();
 
-                    EnviarMensagemUDP(jtApelido.getText() + " entrou na sala");
+                    //EnviarMensagemUDP(jtApelido.getText() + " entrou na sala");
                     jtMensagemGrupo.append("Voce entrou na sala" + "\n");
 
                     /*Se o cliente conectar ao grupo, inicia-se uma thread para 
@@ -498,7 +502,7 @@ public class ChatPainel extends javax.swing.JFrame {
     private void rbUDPActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_rbUDPActionPerformed
         // TODO add your handling code here:
         rbTCP.setSelected(false);
-        tfServer.setEnabled(false);
+
     }//GEN-LAST:event_rbUDPActionPerformed
 
     boolean ignorar = false;
@@ -535,6 +539,7 @@ public class ChatPainel extends javax.swing.JFrame {
 
     private void btDesconectarActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_btDesconectarActionPerformed
         // TODO add your handling code here:
+        conectou = false;
         ignorar = true;
         String mensagem = apelido + " saiu da sala";
         jtMensagemGrupo.append("Voce saiu da sala\n");

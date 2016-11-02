@@ -13,6 +13,7 @@ public class Chat {
         java.awt.EventQueue.invokeLater(new Runnable() {
             public void run() {
                 new ChatPainel().setVisible(true);
+                
             }
         });
     }
